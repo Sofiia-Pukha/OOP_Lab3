@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Lab3.AboutPage"
+             Title="About Program">
+    <VerticalStackLayout Padding="20" Spacing="10" VerticalOptions="Center">
+        <Label Text="Laboratorna robota 3" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center"/>
+        <Label Text="Student: Pukha Sofia" FontSize="18"/>
+        <Label Text="Group: K-26" FontSize="16"/>
+        <Label Text="Description: JSON Manager" TextColor="Gray"/>
+        <Button Text="Back" Clicked="OnBackClicked" Margin="0,20,0,0"/>
+    </VerticalStackLayout>
+</ContentPage>
