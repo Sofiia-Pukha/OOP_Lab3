@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 
 namespace Lab3;
 
@@ -73,13 +73,14 @@ public partial class MainPage : ContentPage
     {
         try
         {
-           
-            string path = Path.Combine(FileSystem.Current.AppDataDirectory, "library.json");
+            if (string.IsNullOrEmpty(currentFilePath))
+            {
+                currentFilePath = Path.Combine(FileSystem.Current.AppDataDirectory, "library.json");
+            }
 
-            await fileService.SaveToFileAsync(booksCollection.ToList(), path);
+            await fileService.SaveToFileAsync(booksCollection.ToList(), currentFilePath);
 
-            currentFilePath = path;
-            await DisplayAlert("Успіх", $"Збережено у: {path}", "ОК");
+            await DisplayAlert("Успіх", $"Збережено у:\n{currentFilePath}", "ОК");
         }
         catch (Exception ex)
         {
@@ -91,10 +92,24 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            string path = Path.Combine(FileSystem.Current.AppDataDirectory, "library.json");
+            var jsonFileType = new FilePickerFileType(
+                new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                { DevicePlatform.iOS, new[] { "public.json" } },
+                { DevicePlatform.Android, new[] { "application/json" } },
+                { DevicePlatform.WinUI, new[] { ".json" } },
+                { DevicePlatform.macOS, new[] { "json" } },
+                });
 
-            if (File.Exists(path))
+            var result = await FilePicker.Default.PickAsync(new PickOptions
             {
+                PickerTitle = "Оберіть файл JSON",
+                FileTypes = jsonFileType
+            });
+
+            if (result != null)
+            {
+                string path = result.FullPath;
                 var loadedBooks = await fileService.ReadFromFileAsync(path);
 
                 booksCollection.Clear();
@@ -102,32 +117,33 @@ public partial class MainPage : ContentPage
                 {
                     booksCollection.Add(book);
                 }
-                StatusLabel.Text = $"Завантажено {booksCollection.Count} книг.";
-            }
-            else
-            {
-                await DisplayAlert("Інфо", "Файл ще не створено. Спочатку збережіть щось.", "ОК");
+
+                currentFilePath = path;
+
+                StatusLabel.Text = $"Завантажено: {result.FileName}";
             }
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Помилка", ex.Message, "ОК");
+            await DisplayAlert("Помилка", $"Не вдалося відкрити файл: {ex.Message}", "ОК");
         }
     }
 
     private void OnSearchClicked(object sender, EventArgs e)
     {
         string term = SearchEntry.Text?.ToLower() ?? "";
+        bool isNumber = int.TryParse(term, out int searchYear);
 
-      
-        var filtered = booksCollection.Where(b =>
-            b.Title.ToLower().Contains(term) ||
-            b.Author.ToLower().Contains(term) ||
-            b.Genre.ToLower().Contains(term)).ToList();
-        
+        var filteredList = booksCollection.Where(book =>
 
-        BooksList.ItemsSource = filtered;
-        StatusLabel.Text = $"Знайдено: {filtered.Count}";
+            book.Title.ToLower().Contains(term) ||
+            book.Author.ToLower().Contains(term) ||
+            (isNumber && book.Year == searchYear)
+
+        ).ToList();
+
+        BooksList.ItemsSource = filteredList;
+        StatusLabel.Text = $"Знайдено: {filteredList.Count}";
     }
 
     private void OnResetSearchClicked(object sender, EventArgs e)
